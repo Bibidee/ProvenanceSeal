@@ -77,12 +77,17 @@ def test_valid_proposal_persists_exact_commitments(direct_vm, direct_deploy, dir
     assert row.artifact_hash == digest(ARTIFACT)
     assert row.manifest_hash == digest(MANIFEST)
     assert int(row.deposit) == 10**15
-    assert contract.get_info()["version"] == "0.1.0"
+    assert contract.get_info()["version"] == "0.1.1"
 
 
 @pytest.mark.parametrize("field,value", [
     ("seal_id", "bad id"), ("artifact_hash", "0x12"), ("manifest_hash", "0x12"),
     ("artifact_url", "http://release.example.org/build.txt"), ("artifact_url", "https://127.0.0.1/build"),
+    ("artifact_url", "https://10.0.0.1/build"), ("artifact_url", "https://172.16.0.1/build"),
+    ("artifact_url", "https://192.168.1.1/build"), ("artifact_url", "https://169.254.1.1/build"),
+    ("artifact_url", "https://[::1]/build"), ("artifact_url", "https://[fc00::1]/build"),
+    ("artifact_url", "https://[fe80::1]/build"), ("artifact_url", "https://[::ffff:192.168.1.1]/build"),
+    ("artifact_url", "https://metadata.internal/build"), ("artifact_url", "https://service.home.arpa/build"),
     ("summary", " "), ("package_name", ""),
 ])
 def test_creation_rejects_malformed_inputs(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, field, value):
@@ -143,6 +148,41 @@ def test_material_semantic_rejection_blocks_without_payout(direct_vm, direct_dep
     row = contract.get_seal("PS-001")
     assert row.status == "preliminary_blocked"
     assert int(row.deposit) == 10**15
+
+
+def test_blocked_refund_requires_sponsor(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm, answer={"artifact_match": "no", "manifest_match": "yes", "evidence_support": "yes",
+                            "risk": "yes", "confidence": 95, "rationale": "The committed build does not match."})
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.finalize_preliminary("PS-001")
+    assert contract.get_seal("PS-001").status == "blocked"
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert():
+        contract.refund_blocked("PS-001")
+    assert int(contract.get_seal("PS-001").deposit) == 10**15
+    direct_vm.sender = direct_alice
+    contract.refund_blocked("PS-001")
+    assert contract.get_seal("PS-001").status == "refunded_sponsor"
+    assert int(contract.get_seal("PS-001").deposit) == 0
+
+
+def test_evidence_manifest_rejects_duplicate_origins(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    direct_vm.sender = direct_bob
+    contract.accept_seal("PS-001")
+    duplicate_origin = json.dumps({"evidence": [
+        {"id": "EV1", "authority": "ci.example.org", "url": EV1_URL, "hash": digest(EV1), "build_id": "PS-001", "claim": "Build passed release checks."},
+        {"id": "EV2", "authority": "audit.example.net", "url": "https://ci.example.org/second.txt", "hash": digest(EV2), "build_id": "PS-001", "claim": "Build matches release manifest."},
+    ]})
+    with direct_vm.expect_revert():
+        contract.submit_release("PS-001", duplicate_origin, "Release PS-001 includes the exact artifact and manifest.")
 
 
 def test_approved_guard_can_be_finalized_and_settled_by_consumer(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):

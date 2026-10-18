@@ -1,5 +1,7 @@
 # ProvenanceSeal
 
+Current contract release: **v0.1.1** (pre-deployment hardening; undeployed).
+
 ProvenanceSeal is a standalone GenLayer Intelligent Contract primitive for
 hash-bound software release provenance with GEN escrow. A sponsor commits to a
 package and version, a beneficiary submits a release artifact, dependency
@@ -42,9 +44,11 @@ instructions inside those artifacts are never reviewer instructions.
 ## Security boundaries
 
 The contract rejects malformed IDs, zero addresses, non-HTTPS or credentialed
-URLs, IP literals, local hostnames, bad hashes, oversized/empty artifacts,
-duplicate evidence IDs, insufficient declared-authority corroboration, and
-illegal lifecycle transitions. Validator equivalence compares the final
+URLs, IP literals, local/internal hostnames, bad hashes, oversized/empty artifacts,
+duplicate evidence IDs or origins, insufficient declared-authority corroboration,
+and illegal lifecycle transitions. Evidence origins must be distinct within a
+manifest; declared authority labels remain descriptive and are not identity
+proofs. Validator equivalence compares the final
 authorization outcome, all material semantic fields, and confidence within a
 bounded range; rationale text is not authorization data. Uncertainty, provider
 failure, unavailable evidence, invalid UTF-8, and semantic risk fail closed.

@@ -1,4 +1,4 @@
-# v0.1.0
+# v0.1.1
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 """ProvenanceSeal: hash-bound release provenance with GEN escrow.
 
@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 from genlayer import Address, TreeMap, allow_storage, gl, u256
 
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 EXPECTED = "[EXPECTED]"
 
 FUNDED = "funded"
@@ -183,8 +183,10 @@ def _url(value) -> str:
     if (parsed.scheme.lower() != "https" or not host or parsed.username is not None
             or parsed.password is not None or port not in (None, 443) or parsed.fragment):
         raise gl.vm.UserError(f"{EXPECTED} Invalid HTTPS URL")
-    if host == "localhost" or host.endswith(".localhost") or host.endswith(".local"):
-        raise gl.vm.UserError(f"{EXPECTED} Local URL target is not allowed")
+    if (host == "localhost" or host.startswith("localhost.") or host.endswith((
+            ".localhost", ".local", ".internal", ".test", ".invalid", ".example",
+            ".lan", ".home.arpa", ".onion", ".corp", ".intranet"))):
+        raise gl.vm.UserError(f"{EXPECTED} Internal URL target is not allowed")
     try:
         ipaddress.ip_address(host)
         raise gl.vm.UserError(f"{EXPECTED} IP literal URL target is not allowed")
@@ -249,7 +251,7 @@ def _evidence_manifest(raw: str, challenge: bool = False) -> dict:
     maximum = MAX_CHALLENGE_SOURCES if challenge else MAX_SOURCES
     if not entries or len(entries) > maximum:
         raise gl.vm.UserError(f"{EXPECTED} Invalid evidence manifest")
-    seen, authorities, normalized = set(), set(), []
+    seen, authorities, origins, normalized = set(), set(), set(), []
     for item in entries:
         required = {"id", "authority", "url", "hash", "build_id", "claim"}
         if not isinstance(item, dict) or set(item) != required:
@@ -259,9 +261,14 @@ def _evidence_manifest(raw: str, challenge: bool = False) -> dict:
         if (identifier in seen or not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", authority)
                 or ".." in authority):
             raise gl.vm.UserError(f"{EXPECTED} Invalid evidence authority")
+        normalized_url = _url(item["url"])
+        origin = (urlsplit(normalized_url).hostname or "").lower().rstrip(".")
+        if origin in origins:
+            raise gl.vm.UserError(f"{EXPECTED} Evidence origins must be distinct")
         seen.add(identifier)
         authorities.add(authority)
-        normalized.append({"id": identifier, "authority": authority, "url": _url(item["url"]),
+        origins.add(origin)
+        normalized.append({"id": identifier, "authority": authority, "url": normalized_url,
                            "hash": _hash(item["hash"]),
                            "build_id": _bounded(item["build_id"], "evidence build id", MAX_ID),
                            "claim": _bounded(item["claim"], "evidence claim", MAX_SUMMARY)})
@@ -558,7 +565,7 @@ class ProvenanceSeal(gl.Contract):
     @gl.public.write
     def refund_blocked(self, seal_id: str) -> None:
         seal = self._get(seal_id)
-        if seal.status != BLOCKED:
+        if seal.status != BLOCKED or not _same_address(seal.sponsor, gl.message.sender_address):
             raise gl.vm.UserError(f"{EXPECTED} Seal is not blocked")
         self._settle(seal, seal.sponsor, REFUNDED_SPONSOR)
 

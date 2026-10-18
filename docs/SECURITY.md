@@ -24,8 +24,11 @@ prevent normal protocol states from locking funds forever.
 
 ## Explicit limitations
 
-HTTPS does not prove DNS or redirect safety. A declared authority is not a
-cryptographic identity proof. External providers can be unavailable, semantic
-models can be wrong, and validators can disagree. Those conditions are handled
-as blocked or retryable outcomes, not as approval. Integrators must verify the
-final child transfer receipt and `value_credited` result.
+HTTPS does not prove DNS or redirect safety. The admission filter rejects
+IP-literal, localhost, and common private/internal naming forms, and each
+manifest requires distinct URL origins, but runtime DNS resolution remains an
+external property. A declared authority is not a cryptographic identity proof.
+External providers can be unavailable, semantic models can be wrong, and
+validators can disagree. Those conditions are handled as blocked or retryable
+outcomes, not as approval. Integrators must verify the final child transfer
+receipt and `value_credited` result.
