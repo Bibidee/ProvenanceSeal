@@ -1,0 +1,7 @@
+.genvmroot/
+.gltest-artifacts/
+.pytest_cache/
+__pycache__/
+*.pyc
+artifacts/*.json
+!artifacts/provenanceseal.abi.json

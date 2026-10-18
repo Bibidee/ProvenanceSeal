@@ -1,0 +1,267 @@
+{
+  "ctor": {
+    "params": [],
+    "kwparams": {}
+  },
+  "methods": {
+    "accept_seal": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "cancel_unaccepted": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "challenge": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ],
+        [
+          "challenge_id",
+          "string"
+        ],
+        [
+          "manifest",
+          "string"
+        ],
+        [
+          "summary",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "create_seal": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ],
+        [
+          "beneficiary",
+          "string"
+        ],
+        [
+          "consumer",
+          "string"
+        ],
+        [
+          "package_name",
+          "string"
+        ],
+        [
+          "claimed_version",
+          "string"
+        ],
+        [
+          "artifact_url",
+          "string"
+        ],
+        [
+          "artifact_hash",
+          "string"
+        ],
+        [
+          "manifest_url",
+          "string"
+        ],
+        [
+          "manifest_hash",
+          "string"
+        ],
+        [
+          "summary",
+          "string"
+        ],
+        [
+          "submission_window",
+          "int"
+        ],
+        [
+          "review_window",
+          "int"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": true
+    },
+    "expire": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "finalize_preliminary": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "get_info": {
+      "params": [],
+      "kwparams": {},
+      "readonly": true,
+      "ret": "dict"
+    },
+    "get_seal": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": true,
+      "ret": {
+        "seal_id": "string",
+        "sponsor": "address",
+        "beneficiary": "address",
+        "consumer": "address",
+        "package_name": "string",
+        "claimed_version": "string",
+        "artifact_url": "string",
+        "artifact_hash": "string",
+        "manifest_url": "string",
+        "manifest_hash": "string",
+        "summary": "string",
+        "evidence_manifest": "string",
+        "review_window": "int",
+        "status": "string",
+        "confidence": "int",
+        "rationale": "string",
+        "reason": "string",
+        "deposit": "int",
+        "settled_amount": "int",
+        "created_at": "int",
+        "submission_deadline": "int",
+        "review_deadline": "int",
+        "next_review_at": "int",
+        "challenge_deadline": "int",
+        "consumer_settle_after": "int",
+        "review_count": "int",
+        "infrastructure_grace_used": "int",
+        "preliminary_status": "string",
+        "challenge_id": "string",
+        "challenge_manifest": "string",
+        "challenge_summary": "string",
+        "challenge_next_review_at": "int",
+        "challenge_grace_used": "int"
+      }
+    },
+    "refund_blocked": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "review": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "review_challenge": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "settle_after_consumer_timeout": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "settle_approved": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    },
+    "submit_release": {
+      "params": [
+        [
+          "seal_id",
+          "string"
+        ],
+        [
+          "evidence_manifest",
+          "string"
+        ],
+        [
+          "summary",
+          "string"
+        ]
+      ],
+      "kwparams": {},
+      "readonly": false,
+      "ret": "null",
+      "payable": false
+    }
+  }
+}
