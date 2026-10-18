@@ -1,0 +1,6 @@
+ProvenanceSeal dependency manifest fixture
+package: provenance-seal
+version: 0.1.1
+build: PS-LIVE-001
+dependency: py-genlayer
+purpose: hash-bound software release provenance with GEN escrow.

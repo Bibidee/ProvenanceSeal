@@ -1,0 +1,5 @@
+ProvenanceSeal release artifact fixture
+package: provenance-seal
+version: 0.1.1
+build: PS-LIVE-001
+purpose: hash-bound software release provenance with GEN escrow.
