@@ -51,6 +51,14 @@ def challenge_manifest(challenge_hash=None):
     ]})
 
 
+def challenge_manifest_custom(identifier="CH1", url=CHALLENGE_URL, challenge_hash=None):
+    return json.dumps({"evidence": [
+        {"id": identifier, "authority": "challenge.example.com", "url": url,
+         "hash": challenge_hash or digest(CHALLENGE), "build_id": "PS-001",
+         "claim": "Challenge evidence addresses the committed build."},
+    ]})
+
+
 def setup(vm, answer=None):
     vm.mock_web(r"release\.example\.org/build\.txt", {"status": 200, "body": ARTIFACT})
     vm.mock_web(r"release\.example\.org/manifest\.json", {"status": 200, "body": MANIFEST})
@@ -295,7 +303,8 @@ def test_challenge_expiry_preserves_approved_outcome_and_escrow(direct_vm, direc
     row = contract.get_seal("PS-001")
     contract.challenge("PS-001", "CH-001", challenge_manifest(), "Please re-check this release.")
     assert contract.get_seal("PS-001").status == "challenged"
-    direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
+    challenged = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(challenged.challenge_review_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
     contract.expire("PS-001")
     restored = contract.get_seal("PS-001")
     assert restored.status == "preliminary_approved"
@@ -306,6 +315,135 @@ def test_challenge_expiry_preserves_approved_outcome_and_escrow(direct_vm, direc
     contract.finalize_preliminary("PS-001")
     contract.settle_approved("PS-001")
     assert contract.get_seal("PS-001").status == "paid_beneficiary"
+
+
+def test_late_filed_challenge_remains_reviewable_after_filing_deadline(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    preliminary = contract.get_seal("PS-001")
+    filing_deadline = int(preliminary.challenge_deadline)
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline - 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    contract.challenge("PS-001", "CH-LATE", challenge_manifest(), "Late but timely challenge.")
+    challenged = contract.get_seal("PS-001")
+    assert int(challenged.challenge_review_deadline) == filing_deadline + 3599
+    # The original filing deadline is now reached, but adjudication remains open.
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline, timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.review_challenge("PS-001")
+    reviewed = contract.get_seal("PS-001")
+    assert reviewed.status == "approved"
+    assert int(reviewed.deposit) == 10**15
+
+
+def test_challenge_adjudication_deadline_is_strict(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    filing_deadline = int(contract.get_seal("PS-001").challenge_deadline)
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline - 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    contract.challenge("PS-001", "CH-BOUNDARY", challenge_manifest(), "Boundary challenge.")
+    review_deadline = int(contract.get_seal("PS-001").challenge_review_deadline)
+    direct_vm._datetime = datetime.fromtimestamp(review_deadline - 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    with direct_vm.expect_revert():
+        contract.expire("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(review_deadline, timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.expire("PS-001")
+    assert contract.get_seal("PS-001").status == "preliminary_approved"
+
+
+def test_challenge_filing_deadline_is_strict(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    filing_deadline = int(contract.get_seal("PS-001").challenge_deadline)
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline, timezone.utc).isoformat().replace("+00:00", "Z")
+    with direct_vm.expect_revert():
+        contract.challenge("PS-001", "CH-LATE", challenge_manifest(), "Too late to file.")
+
+
+def test_challenge_retry_extends_only_adjudication_deadline(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    filing_deadline = int(contract.get_seal("PS-001").challenge_deadline)
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline - 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    contract.challenge("PS-001", "CH-RETRY", challenge_manifest(), "Retryable challenge review.")
+    challenged = contract.get_seal("PS-001")
+    original_review_deadline = int(challenged.challenge_review_deadline)
+    direct_vm.clear_mocks()
+    direct_vm.mock_web(r"release\.example\.org/build\.txt", {"status": 200, "body": ARTIFACT})
+    direct_vm.mock_web(r"release\.example\.org/manifest\.json", {"status": 200, "body": MANIFEST})
+    direct_vm.mock_web(r"ci\.example\.org/attestation\.txt", {"status": 200, "body": EV1})
+    direct_vm.mock_web(r"audit\.example\.net/attestation\.txt", {"status": 200, "body": EV2})
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    direct_vm.mock_llm(r"Assess the exact hash-verified release artifacts", json.dumps({
+        "artifact_match": "unclear", "manifest_match": "yes", "evidence_support": "yes",
+        "risk": "unclear", "confidence": 80, "rationale": "The challenge provider is temporarily uncertain.",
+    }))
+    direct_vm._datetime = datetime.fromtimestamp(filing_deadline, timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.review_challenge("PS-001")
+    retry = contract.get_seal("PS-001")
+    assert retry.status == "challenged"
+    assert int(retry.challenge_deadline) == filing_deadline
+    assert int(retry.challenge_review_deadline) == original_review_deadline + 900
+    next_review = int(retry.challenge_next_review_at)
+    direct_vm.clear_mocks()
+    setup(direct_vm)
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    direct_vm._datetime = datetime.fromtimestamp(next_review, timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.review_challenge("PS-001")
+    assert contract.get_seal("PS-001").status == "approved"
+
+
+@pytest.mark.parametrize("duplicate", ["id", "origin"])
+def test_challenge_manifest_cannot_reuse_original_evidence_identity(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, duplicate):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    if duplicate == "id":
+        candidate = challenge_manifest_custom(identifier="EV1")
+    else:
+        candidate = challenge_manifest_custom(url="https://ci.example.org/challenge.txt")
+    with direct_vm.expect_revert():
+        contract.challenge("PS-001", "CH-COLLIDE", candidate, "Colliding evidence.")
+    assert contract.get_seal("PS-001").status == "preliminary_approved"
+
+
+def test_challenge_and_adjudication_reject_unauthorized_actor(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    outsider = b"\x09" * 20
+    direct_vm.sender = outsider
+    with direct_vm.expect_revert():
+        contract.challenge("PS-001", "CH-OUTSIDER", challenge_manifest(), "Unauthorized challenge.")
+    direct_vm.sender = direct_alice
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    contract.challenge("PS-001", "CH-AUTHORIZED", challenge_manifest(), "Authorized challenge.")
+    direct_vm.sender = outsider
+    with direct_vm.expect_revert():
+        contract.review_challenge("PS-001")
 
 
 def test_consumer_can_settle_immediately_and_sponsor_cannot_refund_approved_escrow(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):

@@ -24,23 +24,30 @@ semantic fields. Consensus is required before escrow can become payable.
 
 `funded -> active -> submitted -> preliminary_approved | preliminary_blocked`
 
-An approved preliminary result has a one-hour challenge window. After an
-unchallenged window it becomes `approved`; the designated consumer can settle
-immediately, and the beneficiary receives the escrow. The consumer has an
-exclusive two-hour settlement window; once it expires, the beneficiary can
-settle independently. That timeout only unlocks the beneficiary fallback: it
-never refunds the sponsor, cancels the release, or pays automatically. A
-blocked result refunds the sponsor. A challenge is single-use and bounded:
-expiry, malformed evidence, or provider uncertainty restores the original
-preliminary outcome and never moves the escrow. Only a consensus-backed adverse
-challenge changes an approval to `blocked`; only the sponsor can claim a blocked
-refund. Provider/network errors and malformed model output become `retryable`,
-never an approval. Every payout zeros the stored deposit and persists the
-terminal state before the single transfer helper emits GEN.
+An approved preliminary result has a one-hour challenge filing window. A
+challenge accepted during that window starts its own bounded adjudication
+deadline, so a legitimate challenge filed just before the filing cutoff remains
+reviewable after that cutoff. An unchallenged result becomes `approved` only
+after the filing window closes; the designated consumer can settle immediately,
+and the beneficiary receives the escrow. The consumer has an exclusive two-hour
+settlement window; once it expires, the beneficiary can settle independently.
+That timeout only unlocks the beneficiary fallback: it never refunds the
+sponsor, cancels the release, or pays automatically. A blocked result refunds
+the sponsor. A challenge is single-use and bounded: expiry, malformed evidence,
+or provider uncertainty restores the original preliminary outcome and never
+moves the escrow. Challenge evidence must use IDs and URL origins distinct from
+the original evidence, and semantic review receives original and challenge
+evidence in separate labeled fields. Only a consensus-backed adverse challenge
+changes an approval to `blocked`; only the sponsor can claim a blocked refund.
+Provider/network errors and malformed model output become `retryable`, never an
+approval. Every payout zeros the stored deposit and persists the terminal state
+before the single transfer helper emits GEN.
 
 ## Settlement timing
 
-- Preliminary approval opens a **1-hour challenge window**.
+- Preliminary approval opens a **1-hour challenge filing window**.
+- Accepting a challenge starts a separate bounded **1-hour adjudication
+  deadline**; the filing deadline never controls review eligibility.
 - After finalization, the designated consumer may call `settle_approved`
   immediately and exclusively for **2 hours**.
 - At exactly 2 hours, and after it, the beneficiary may call

@@ -32,12 +32,16 @@ seal cannot be passed to `refund_blocked`.
 
 ## Challenge safety
 
-Only one challenge slot exists per seal. Entering `challenged` does not move or
-reverse escrow. Invalid, unavailable, unclear, or expired challenge evidence
-restores the original preliminary decision, so a frivolous challenge cannot
-force a sponsor refund or deny a valid beneficiary payment. A consensus-backed
-adverse result may still overturn an approval into `blocked`; the sponsor must
-then explicitly claim the refund.
+Only one challenge slot exists per seal. The one-hour challenge filing deadline
+is separate from the bounded adjudication deadline created when the challenge
+is accepted. Entering `challenged` does not move or reverse escrow. Challenge
+evidence IDs and URL origins cannot duplicate original evidence, and the
+semantic review receives original and challenge evidence separately. Invalid,
+unavailable, unclear, or expired challenge evidence restores the original
+preliminary decision, so a frivolous challenge cannot force a sponsor refund or
+deny a valid beneficiary payment. A consensus-backed adverse result may still
+overturn an approval into `blocked`; the sponsor must then explicitly claim the
+refund.
 
 ## Explicit limitations
 

@@ -181,6 +181,7 @@
         "challenge_manifest": "string",
         "challenge_summary": "string",
         "challenge_next_review_at": "int",
+        "challenge_review_deadline": "int",
         "challenge_grace_used": "int"
       }
     },

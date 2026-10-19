@@ -35,7 +35,9 @@ manifest must contain at least two distinct labels and distinct HTTPS host
 origins, so two paths on one host cannot be counted as independent
 corroboration. Labels remain descriptive metadata; they do not prove the
 authority's real-world identity. Challenge manifests are smaller and single-use;
-they do not automatically invalidate the original outcome.
+their evidence IDs and URL origins must not overlap the original manifest, and
+the semantic review receives original and challenge evidence in separate fields.
+Challenge evidence does not silently become original corroboration.
 
 ## Escrow ordering
 
@@ -46,8 +48,11 @@ active-case counter is decremented exactly once on terminal settlement.
 
 ## Settlement timing
 
-Preliminary approval opens a one-hour challenge window. `finalize_preliminary`
-is rejected before the exact deadline and is allowed at the deadline. Final
+Preliminary approval opens a one-hour challenge filing window.
+`finalize_preliminary` is rejected before the exact deadline and is allowed at
+the deadline. A challenge accepted before filing closes starts a separate
+one-hour adjudication deadline; review uses that deadline, not the filing
+deadline, so a late-filed legitimate challenge remains reviewable. Final
 approval gives the designated consumer an exclusive two-hour settlement window;
 `settle_approved` is available immediately, while
 `settle_after_consumer_timeout` is rejected before the exact two-hour boundary

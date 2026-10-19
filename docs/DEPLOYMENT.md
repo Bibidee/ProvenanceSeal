@@ -6,19 +6,22 @@ presented as current until the local release gate and CI are green and a fresh
 Studionet deployment is explicitly authorized and finalized.
 
 Current frozen-source candidate (before commit): SHA-256
-`d52f781ab71a3df2a12603d6a62716d0ca54adb951e1d7c73fdae7e125706a89`.
+`4d70c344386e76e617a9d5376c055f62f0e9e56a1e71f80311302433e433d3fc`.
 
 ## v0.2.0 pre-deployment acceptance checklist
 
 - [ ] exactly one deployable contract source under `contracts/`
 - [ ] Direct Mode lifecycle and adversarial tests pass
+- [ ] the one-hour challenge filing boundary is strict and finalization is allowed at the exact deadline
+- [ ] challenge acceptance starts a separate bounded adjudication deadline
+- [ ] a challenge filed just before the filing deadline remains reviewable after that deadline
 - [ ] challenge expiry preserves the original preliminary outcome
-- [ ] the one-hour challenge boundary is strict and finalization is allowed at the exact deadline
 - [ ] consumer settlement is immediate after final approval
 - [ ] beneficiary fallback is rejected before, and allowed at/after, the exact two-hour boundary
 - [ ] approved escrow remains deposited after consumer-window expiry when nobody settles
 - [ ] no timeout path automatically refunds or pays an approved escrow
 - [ ] malformed challenge evidence cannot poison the original outcome
+- [ ] challenge evidence IDs/origins cannot duplicate original evidence and semantic review labels evidence origins separately
 - [ ] sponsor requirements remain immutable after beneficiary submission
 - [ ] unauthorized settlement/refund and replay attempts are rejected
 - [ ] malformed output, provider failures, and validator disagreement fail closed

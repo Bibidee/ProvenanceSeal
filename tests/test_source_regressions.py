@@ -20,6 +20,10 @@ def test_contract_preserves_requirements_and_challenge_origin():
     assert "def _restore_challenge" in source
     assert 'self._restore_challenge(seal, "challenge_expired")' in source
     assert 'self._restore_challenge(seal, "challenge_invalid_evidence")' in source
+    assert "challenge_review_deadline" in source
+    assert "MAX_CHALLENGE_WINDOW - CHALLENGE_ADJUDICATION_WINDOW" in source
+    assert '"original_evidence"' in source
+    assert '"challenge_evidence"' in source
 
 
 def test_contract_has_no_unbounded_challenge_reversal():
@@ -27,3 +31,4 @@ def test_contract_has_no_unbounded_challenge_reversal():
     challenge_block = source[source.index("def expire"):source.index("@gl.public.view", source.index("def expire"))]
     assert "self._restore_challenge(seal, \"challenge_expired\")" in challenge_block
     assert "self._settle(seal, seal.sponsor, REFUNDED_SPONSOR)" in challenge_block
+    assert "challenge_review_deadline" in challenge_block
