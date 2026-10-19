@@ -24,16 +24,30 @@ semantic fields. Consensus is required before escrow can become payable.
 
 `funded -> active -> submitted -> preliminary_approved | preliminary_blocked`
 
-An approved preliminary result has a bounded challenge window. After an
-unchallenged window it becomes `approved`; only the designated consumer can
-settle it, and the beneficiary receives the escrow. A blocked result refunds the
-sponsor. A challenge is single-use and bounded: expiry, malformed evidence, or
-provider uncertainty restores the original preliminary outcome and never moves
-the escrow. Only a consensus-backed adverse challenge changes an approval to
-`blocked`; only the sponsor can claim a blocked refund. Provider/network errors
-and malformed model output become `retryable`, never an approval. Every payout
-zeros the stored deposit and persists the terminal state before the single
-transfer helper emits GEN.
+An approved preliminary result has a one-hour challenge window. After an
+unchallenged window it becomes `approved`; the designated consumer can settle
+immediately, and the beneficiary receives the escrow. The consumer has an
+exclusive two-hour settlement window; once it expires, the beneficiary can
+settle independently. That timeout only unlocks the beneficiary fallback: it
+never refunds the sponsor, cancels the release, or pays automatically. A
+blocked result refunds the sponsor. A challenge is single-use and bounded:
+expiry, malformed evidence, or provider uncertainty restores the original
+preliminary outcome and never moves the escrow. Only a consensus-backed adverse
+challenge changes an approval to `blocked`; only the sponsor can claim a blocked
+refund. Provider/network errors and malformed model output become `retryable`,
+never an approval. Every payout zeros the stored deposit and persists the
+terminal state before the single transfer helper emits GEN.
+
+## Settlement timing
+
+- Preliminary approval opens a **1-hour challenge window**.
+- After finalization, the designated consumer may call `settle_approved`
+  immediately and exclusively for **2 hours**.
+- At exactly 2 hours, and after it, the beneficiary may call
+  `settle_after_consumer_timeout` independently.
+- The timeout does not trigger a callback, refund, cancellation, or automatic
+  payout. If neither authorized party acts, the approved escrow remains held
+  and available for settlement.
 
 ## What is committed
 

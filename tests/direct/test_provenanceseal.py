@@ -200,6 +200,7 @@ def test_finalize_and_consumer_timeout_are_strictly_deadline_bound(direct_vm, di
     direct_vm.sender = direct_alice
     contract.review("PS-001")
     row = contract.get_seal("PS-001")
+    assert int(row.challenge_deadline) - now(direct_vm) == 3600
     before = datetime.fromtimestamp(int(row.challenge_deadline) - 1, timezone.utc).isoformat().replace("+00:00", "Z")
     direct_vm._datetime = before
     with direct_vm.expect_revert():
@@ -207,6 +208,7 @@ def test_finalize_and_consumer_timeout_are_strictly_deadline_bound(direct_vm, di
     direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
     contract.finalize_preliminary("PS-001")
     approved = contract.get_seal("PS-001")
+    assert int(approved.consumer_settle_after) == int(row.challenge_deadline) + 2 * 3600
     direct_vm.sender = direct_bob
     with direct_vm.expect_revert():
         contract.settle_after_consumer_timeout("PS-001")
@@ -304,6 +306,74 @@ def test_challenge_expiry_preserves_approved_outcome_and_escrow(direct_vm, direc
     contract.finalize_preliminary("PS-001")
     contract.settle_approved("PS-001")
     assert contract.get_seal("PS-001").status == "paid_beneficiary"
+
+
+def test_consumer_can_settle_immediately_and_sponsor_cannot_refund_approved_escrow(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.finalize_preliminary("PS-001")
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert():
+        contract.refund_blocked("PS-001")
+    direct_vm.sender = direct_charlie
+    contract.settle_approved("PS-001")
+    settled = contract.get_seal("PS-001")
+    assert settled.status == "paid_beneficiary"
+    assert int(settled.deposit) == 0
+    assert int(settled.settled_amount) == 10**15
+    assert int(contract.sponsor_counts[address(direct_alice).lower()]) == 0
+
+
+@pytest.mark.parametrize("offset", [0, 1])
+def test_beneficiary_fallback_requires_exact_two_hour_boundary(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, offset):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.finalize_preliminary("PS-001")
+    approved = contract.get_seal("PS-001")
+    direct_vm.sender = direct_bob
+    before_timeout = datetime.fromtimestamp(int(approved.consumer_settle_after) - 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    direct_vm._datetime = before_timeout
+    with direct_vm.expect_revert():
+        contract.settle_after_consumer_timeout("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(approved.consumer_settle_after) + offset, timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.settle_after_consumer_timeout("PS-001")
+    settled = contract.get_seal("PS-001")
+    assert settled.status == "paid_beneficiary"
+    assert int(settled.deposit) == 0
+    assert int(settled.settled_amount) == 10**15
+
+
+def test_approved_escrow_is_not_automatically_refunded_when_consumer_window_expires(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(row.challenge_deadline), timezone.utc).isoformat().replace("+00:00", "Z")
+    contract.finalize_preliminary("PS-001")
+    approved = contract.get_seal("PS-001")
+    direct_vm._datetime = datetime.fromtimestamp(int(approved.consumer_settle_after) + 1, timezone.utc).isoformat().replace("+00:00", "Z")
+    still_available = contract.get_seal("PS-001")
+    assert still_available.status == "approved"
+    assert int(still_available.deposit) == 10**15
+    assert int(still_available.settled_amount) == 0
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert():
+        contract.settle_approved("PS-001")
 
 
 def test_invalid_challenge_evidence_cannot_block_original_approval(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):

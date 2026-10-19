@@ -21,10 +21,14 @@ agreement on every material field and the authorization outcome.
 The only native-token emission path is `_send_gen`. Settlement functions debit
 the stored deposit, persist the terminal status, decrement sponsor accounting,
 and only then emit the transfer. The designated consumer gate prevents an
-arbitrary caller from claiming an approved escrow; timeout and refund paths
-prevent normal protocol states from locking funds forever. A terminal seal has
-one settlement path: a second call sees a zero deposit or terminal status and
-fails. Blocked refunds are sponsor-only.
+arbitrary caller from claiming an approved escrow. The consumer may settle
+immediately after final approval; the two-hour consumer-exclusive window only
+delays the beneficiary fallback. At the exact boundary and after it, the
+beneficiary may settle independently. The timeout path never refunds the sponsor
+or pays automatically, so an approved escrow remains available if neither party
+acts. A terminal seal has one settlement path: a second call sees a zero deposit
+or terminal status and fails. Blocked refunds are sponsor-only, and an approved
+seal cannot be passed to `refund_blocked`.
 
 ## Challenge safety
 

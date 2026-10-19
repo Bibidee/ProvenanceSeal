@@ -44,6 +44,18 @@ read that ledger, set it to zero, persist terminal state and accounting, then
 call `_send_gen`. A second settlement therefore fails before any transfer. The
 active-case counter is decremented exactly once on terminal settlement.
 
+## Settlement timing
+
+Preliminary approval opens a one-hour challenge window. `finalize_preliminary`
+is rejected before the exact deadline and is allowed at the deadline. Final
+approval gives the designated consumer an exclusive two-hour settlement window;
+`settle_approved` is available immediately, while
+`settle_after_consumer_timeout` is rejected before the exact two-hour boundary
+and available at or after it. The fallback always pays the beneficiary. No
+timer callback, expiry call, or consumer timeout can refund or pay an approved
+escrow automatically; if nobody calls a settlement method, the approved escrow
+remains in `deposit` and available to the authorized parties.
+
 ## Challenge state machine
 
 `preliminary_approved` and `preliminary_blocked` retain the original consensus
