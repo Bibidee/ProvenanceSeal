@@ -159,6 +159,7 @@
         "manifest_url": "string",
         "manifest_hash": "string",
         "summary": "string",
+        "sponsor_requirements": "string",
         "evidence_manifest": "string",
         "review_window": "int",
         "status": "string",

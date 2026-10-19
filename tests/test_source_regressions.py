@@ -11,3 +11,19 @@ def test_contract_contains_escrow_safety_choke_point():
     assert "seal.deposit = u256(0)" in source
     assert "_send_gen(recipient, amount)" in source
     assert source.index("seal.deposit = u256(0)") < source.index("_send_gen(recipient, amount)")
+
+
+def test_contract_preserves_requirements_and_challenge_origin():
+    source = Path("contracts/provenanceseal.py").read_text(encoding="utf-8")
+    assert "sponsor_requirements" in source
+    assert "beneficiary_claim" in source
+    assert "def _restore_challenge" in source
+    assert 'self._restore_challenge(seal, "challenge_expired")' in source
+    assert 'self._restore_challenge(seal, "challenge_invalid_evidence")' in source
+
+
+def test_contract_has_no_unbounded_challenge_reversal():
+    source = Path("contracts/provenanceseal.py").read_text(encoding="utf-8")
+    challenge_block = source[source.index("def expire"):source.index("@gl.public.view", source.index("def expire"))]
+    assert "self._restore_challenge(seal, \"challenge_expired\")" in challenge_block
+    assert "self._settle(seal, seal.sponsor, REFUNDED_SPONSOR)" in challenge_block

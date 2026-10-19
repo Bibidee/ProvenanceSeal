@@ -1,6 +1,6 @@
 # ProvenanceSeal
 
-Current contract release: **v0.1.1** (pre-deployment hardening; undeployed).
+Current contract release: **v0.2.0** (remediation branch; not yet deployed).
 
 ProvenanceSeal is a standalone GenLayer Intelligent Contract primitive for
 hash-bound software release provenance with GEN escrow. A sponsor commits to a
@@ -26,20 +26,25 @@ semantic fields. Consensus is required before escrow can become payable.
 
 An approved preliminary result has a bounded challenge window. After an
 unchallenged window it becomes `approved`; only the designated consumer can
-settle it, and the beneficiary receives the escrow. A blocked result, expired
-submission, unresolved challenge, or cancellation refunds the sponsor.
-Provider/network errors and malformed model output become `retryable`, never an
-approval. Every payout zeros the stored deposit and persists the terminal state
-before the single transfer helper emits GEN.
+settle it, and the beneficiary receives the escrow. A blocked result refunds the
+sponsor. A challenge is single-use and bounded: expiry, malformed evidence, or
+provider uncertainty restores the original preliminary outcome and never moves
+the escrow. Only a consensus-backed adverse challenge changes an approval to
+`blocked`; only the sponsor can claim a blocked refund. Provider/network errors
+and malformed model output become `retryable`, never an approval. Every payout
+zeros the stored deposit and persists the terminal state before the single
+transfer helper emits GEN.
 
 ## What is committed
 
-The sponsor commits exact HTTPS URLs and SHA-256 hashes for the release artifact
-and dependency manifest. The beneficiary submits a canonical evidence manifest
+The sponsor commits exact HTTPS URLs, SHA-256 hashes, and immutable acceptance
+requirements for the release artifact and dependency manifest. The beneficiary
+submits a canonical evidence manifest and a separate untrusted claim summary
 with evidence IDs, declared authorities, URLs, hashes, build IDs, and claims.
 Declared authorities are corroboration labels, not proof of real-world identity.
-The model receives the verified artifact and evidence as quoted untrusted data;
-instructions inside those artifacts are never reviewer instructions.
+The model receives the sponsor requirements, beneficiary claim, verified artifact
+and evidence as quoted untrusted data; instructions inside those values are never
+reviewer instructions.
 
 ## Security boundaries
 
@@ -48,15 +53,18 @@ URLs, IP literals, local/internal hostnames, bad hashes, oversized/empty artifac
 duplicate evidence IDs or origins, insufficient declared-authority corroboration,
 and illegal lifecycle transitions. Evidence origins must be distinct within a
 manifest; declared authority labels remain descriptive and are not identity
-proofs. Validator equivalence compares the final
-authorization outcome, all material semantic fields, and confidence within a
-bounded range; rationale text is not authorization data. Uncertainty, provider
-failure, unavailable evidence, invalid UTF-8, and semantic risk fail closed.
+proofs. Validator equivalence compares the final authorization outcome, all
+material semantic fields, and a bounded confidence delta; rationale text is not
+authorization data. Uncertainty, provider failure, unavailable evidence, invalid
+UTF-8, and semantic risk fail closed.
 
 URL admission cannot prove DNS resolution or redirect safety, declared
 authorities do not establish identity, and semantic-model judgments can still
-be wrong or unavailable. Integrators must verify the finalized child transfer
-receipt and credited value after settlement.
+be wrong or unavailable. Response-size limits are enforced after the runtime
+returns a response because the runtime does not expose a trusted pre-fetch byte
+limit. Integrators must verify the finalized child transfer receipt and credited
+value after settlement; a dispatched child transfer is not proof of beneficiary
+credit.
 
 ## Development
 
@@ -70,9 +78,10 @@ genvm-lint schema contracts/provenanceseal.py --output artifacts/provenanceseal.
 
 Only `contracts/provenanceseal.py` is deployable. Tests and documentation are
 kept outside `contracts/` so GenVM lint cannot mistake pytest imports for
-contract sources. StudioNet deployment and live evidence will be added only
-after the source is frozen, CI is green, and the deployed source is compared
-byte-for-byte.
+contract sources. The v0.2.0 source must be frozen, CI must be green, and a
+future Studionet 61999 deployment must be compared byte-for-byte before it is
+described as current. The historical v0.1.1 deployment is documented separately
+in `docs/DEPLOYMENT.md` and is not source-parity evidence for this branch.
 
 ## Downstream integration
 

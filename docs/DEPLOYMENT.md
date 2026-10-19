@@ -1,22 +1,44 @@
 # Deployment status
 
-ProvenanceSeal v0.1.1 is currently **undeployed**. No address, transaction, live
-approval, or source-parity claim should be treated as current until the frozen
-source passes the release gate and a fresh StudioNet deployment is finalized.
+The current remediation branch is **v0.2.0** and is not deployed. No v0.2.0
+address, transaction, source-parity claim, or live lifecycle result may be
+presented as current until the local release gate and CI are green and a fresh
+Studionet deployment is explicitly authorized and finalized.
 
-## Pre-deployment acceptance checklist
+Current frozen-source candidate (before commit): SHA-256
+`d08416aa7a4e09449137067c130dc6f9c2f97560631e4bea8cf8afdddaa4bec1`.
 
-- [ ] one deployable contract source under `contracts/`
+## v0.2.0 pre-deployment acceptance checklist
+
+- [ ] exactly one deployable contract source under `contracts/`
 - [ ] Direct Mode lifecycle and adversarial tests pass
-- [ ] Duplicate evidence origins and unauthorized refund attempts are rejected
-- [ ] malformed output and provider failures remain fail-closed
+- [ ] challenge expiry preserves the original preliminary outcome
+- [ ] malformed challenge evidence cannot poison the original outcome
+- [ ] sponsor requirements remain immutable after beneficiary submission
+- [ ] unauthorized settlement/refund and replay attempts are rejected
+- [ ] malformed output, provider failures, and validator disagreement fail closed
 - [ ] GenVM lint and ABI/schema generation pass
-- [ ] source SHA-256 is recorded before deployment
-- [ ] deployment is finalized with GenVM success
+- [ ] final source SHA-256 and Git commit are recorded
+- [ ] deployment is finalized on Studionet chain ID 61999 with GenVM success
 - [ ] `gen_getContractCode` source matches local bytes exactly
 - [ ] live `funded -> active -> submitted -> approved -> paid_beneficiary`
-      evidence is recorded
-- [ ] child transfer receipt reports credited value
+      evidence is recorded from finalized receipts and canonical state
+- [ ] child transfer receipt and `value_credited` are independently verified
 
-Historical deployments from other projects are unrelated and must not be
-copied into this document.
+## Historical v0.1.1 Studionet record
+
+This record is retained for audit history only. It is not source-parity evidence
+for v0.2.0 because the contract source changed during this remediation.
+
+- Network: GenLayer Studionet, chain ID `61999`
+- Contract: `0x6232bF84b9341b0D932764DdCed7Bb05aA5A2E77`
+- Deployment transaction: `0xdb41c0d6e985a30d499b334da5d60089239923631207f7bde0536e91e802d5b6`
+- Explorer: https://explorer-studio.genlayer.com/address/0x6232bF84b9341b0D932764DdCed7Bb05aA5A2E77
+- Historical release: v0.1.1, source SHA-256 `fc34ba788cb3edef7e0c9efc6e3d5e43bb2e2c79c70ba243f5829480619c2abc`
+- Historical source parity: verified for v0.1.1 only
+- Historical live seal: `PS-LIVE-001` (approval evidence exists; settlement remains
+  governed by its recorded consumer delay and must not be reused as v0.2.0 proof)
+
+Never copy an address or receipt from another project into a v0.2.0 release
+claim. A dispatched child transfer is not credited-value evidence until its
+finalized child receipt is independently checked.
