@@ -259,7 +259,10 @@ def _evidence_manifest(raw: str, challenge: bool = False) -> dict:
         required = {"id", "authority", "url", "hash", "build_id", "claim"}
         if not isinstance(item, dict) or set(item) != required:
             raise gl.vm.UserError(f"{EXPECTED} Invalid evidence record")
-        identifier = _identifier(item.get("id"), "evidence id", 48)
+        # Evidence identifiers are semantic labels, not opaque case-sensitive
+        # keys. Normalize them before duplicate checks and canonical storage
+        # so `EV1` and `ev1` cannot be used to disguise corroboration reuse.
+        identifier = _identifier(item.get("id"), "evidence id", 48).lower()
         authority = str(item.get("authority", "")).strip().lower()
         if (identifier in seen or not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", authority)
                 or ".." in authority):

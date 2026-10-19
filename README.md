@@ -35,7 +35,7 @@ That timeout only unlocks the beneficiary fallback: it never refunds the
 sponsor, cancels the release, or pays automatically. A blocked result refunds
 the sponsor. A challenge is single-use and bounded: expiry, malformed evidence,
 or provider uncertainty restores the original preliminary outcome and never
-moves the escrow. Challenge evidence must use IDs and URL origins distinct from
+moves the escrow. Challenge evidence must use IDs normalized to lowercase and URL origins distinct from
 the original evidence, and semantic review receives original and challenge
 evidence in separate labeled fields. Only a consensus-backed adverse challenge
 changes an approval to `blocked`; only the sponsor can claim a blocked refund.
@@ -71,7 +71,7 @@ reviewer instructions.
 
 The contract rejects malformed IDs, zero addresses, non-HTTPS or credentialed
 URLs, IP literals, local/internal hostnames, bad hashes, oversized/empty artifacts,
-duplicate evidence IDs or origins, insufficient declared-authority corroboration,
+duplicate evidence IDs (after lowercase normalization) or origins, insufficient declared-authority corroboration,
 and illegal lifecycle transitions. Evidence origins must be distinct within a
 manifest; declared authority labels remain descriptive and are not identity
 proofs. Validator equivalence compares the final authorization outcome, all
@@ -85,7 +85,9 @@ be wrong or unavailable. Response-size limits are enforced after the runtime
 returns a response because the runtime does not expose a trusted pre-fetch byte
 limit. Integrators must verify the finalized child transfer receipt and credited
 value after settlement; a dispatched child transfer is not proof of beneficiary
-credit.
+credit. Direct Mode can exercise settlement ordering and replay guards, but it
+does not expose atomic rollback for a mocked external transfer failure; that
+property remains a supported-runtime verification item.
 
 ## Development
 

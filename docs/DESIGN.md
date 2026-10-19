@@ -35,7 +35,7 @@ manifest must contain at least two distinct labels and distinct HTTPS host
 origins, so two paths on one host cannot be counted as independent
 corroboration. Labels remain descriptive metadata; they do not prove the
 authority's real-world identity. Challenge manifests are smaller and single-use;
-their evidence IDs and URL origins must not overlap the original manifest, and
+their evidence IDs are normalized to lowercase and must not overlap the original manifest's IDs or URL origins, and
 the semantic review receives original and challenge evidence in separate fields.
 Challenge evidence does not silently become original corroboration.
 
@@ -43,7 +43,10 @@ Challenge evidence does not silently become original corroboration.
 
 GEN enters through `create_seal` and is tracked in `deposit`. All release paths
 read that ledger, set it to zero, persist terminal state and accounting, then
-call `_send_gen`. A second settlement therefore fails before any transfer. The
+call `_send_gen`. A second settlement therefore fails before any transfer. If
+the external transfer reverts, the chain runtime must atomically revert the
+state mutation; Direct Mode cannot model that external failure, so the local
+rollback test is explicitly skipped when unsupported. The
 active-case counter is decremented exactly once on terminal settlement.
 
 ## Settlement timing

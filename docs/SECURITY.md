@@ -35,7 +35,8 @@ seal cannot be passed to `refund_blocked`.
 Only one challenge slot exists per seal. The one-hour challenge filing deadline
 is separate from the bounded adjudication deadline created when the challenge
 is accepted. Entering `challenged` does not move or reverse escrow. Challenge
-evidence IDs and URL origins cannot duplicate original evidence, and the
+evidence IDs are normalized to lowercase and cannot duplicate original evidence
+IDs or URL origins, and the
 semantic review receives original and challenge evidence separately. Invalid,
 unavailable, unclear, or expired challenge evidence restores the original
 preliminary decision, so a frivolous challenge cannot force a sponsor refund or
@@ -55,4 +56,6 @@ authority is not a cryptographic identity proof. External providers can be
 unavailable, semantic models can be wrong, and validators can disagree. Those
 conditions are handled as blocked or retryable outcomes, not as approval.
 Integrators must verify the final child transfer receipt and `value_credited`
-result; a child-transfer dispatch alone is not credit proof.
+result; a child-transfer dispatch alone is not credit proof. Direct Mode does
+not expose atomic rollback for a mocked external transfer exception, so that
+behavior remains a runtime-level verification item.

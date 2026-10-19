@@ -24,6 +24,7 @@ def test_contract_preserves_requirements_and_challenge_origin():
     assert "MAX_CHALLENGE_WINDOW - CHALLENGE_ADJUDICATION_WINDOW" in source
     assert '"original_evidence"' in source
     assert '"challenge_evidence"' in source
+    assert 'identifier = _identifier(item.get("id"), "evidence id", 48).lower()' in source
 
 
 def test_contract_has_no_unbounded_challenge_reversal():

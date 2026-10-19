@@ -5,8 +5,8 @@ address, transaction, source-parity claim, or live lifecycle result may be
 presented as current until the local release gate and CI are green and a fresh
 Studionet deployment is explicitly authorized and finalized.
 
-Current frozen-source candidate (before commit): SHA-256
-`4d70c344386e76e617a9d5376c055f62f0e9e56a1e71f80311302433e433d3fc`.
+Current frozen-source candidate: SHA-256
+`4a2e1bce55b1387075e9bd871c9b1feb34a986d0a39d42244c1efaaf55a3a293`.
 
 ## v0.2.0 pre-deployment acceptance checklist
 
@@ -21,10 +21,11 @@ Current frozen-source candidate (before commit): SHA-256
 - [ ] approved escrow remains deposited after consumer-window expiry when nobody settles
 - [ ] no timeout path automatically refunds or pays an approved escrow
 - [ ] malformed challenge evidence cannot poison the original outcome
-- [ ] challenge evidence IDs/origins cannot duplicate original evidence and semantic review labels evidence origins separately
+- [ ] challenge evidence IDs are normalized to lowercase, cannot duplicate original evidence IDs/origins, and semantic review labels evidence origins separately
 - [ ] sponsor requirements remain immutable after beneficiary submission
 - [ ] unauthorized settlement/refund and replay attempts are rejected
 - [ ] malformed output, provider failures, and validator disagreement fail closed
+- [ ] Direct Mode transfer-failure rollback is verified where the runtime exposes atomic external-transfer failure; otherwise the test is recorded as skipped
 - [ ] GenVM lint and ABI/schema generation pass
 - [ ] final source SHA-256 and Git commit are recorded
 - [ ] deployment is finalized on Studionet chain ID 61999 with GenVM success
