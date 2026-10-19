@@ -171,6 +171,44 @@ def test_malformed_model_output_is_retryable(direct_vm, direct_deploy, direct_al
     assert int(row.deposit) == 10**15
 
 
+@pytest.mark.parametrize("rationale", [None, True, 17, [], {}, "  \t\n  "])
+def test_malformed_rationale_types_fail_closed_and_keep_escrow(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, rationale
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    answer = {
+        "artifact_match": "yes", "manifest_match": "yes", "evidence_support": "yes",
+        "risk": "no", "confidence": 94, "rationale": rationale,
+    }
+    setup(direct_vm, answer=answer)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    assert row.status == "retryable"
+    assert row.reason == "malformed_model_output"
+    assert int(row.deposit) == 10**15
+    assert int(row.settled_amount) == 0
+
+
+def test_valid_rationale_is_normalized_without_changing_approval(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm, answer={
+        "artifact_match": "yes", "manifest_match": "yes", "evidence_support": "yes",
+        "risk": "no", "confidence": 94, "rationale": "  Valid   rationale\n",
+    })
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    assert row.status == "preliminary_approved"
+    assert row.rationale == "Valid rationale"
+
+
 def test_provider_failure_is_retryable_and_keeps_escrow(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):
     contract = deploy(direct_vm, direct_deploy, direct_alice)
     create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
@@ -491,6 +529,66 @@ def test_validator_disagreement_on_material_fields_fails_closed(
     assert int(row.deposit) == 10**15
 
 
+def test_malformed_leader_analysis_cannot_bypass_validator_schema(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, monkeypatch
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    instance = object.__getattribute__(contract, "_instance")
+    contract_module = sys.modules[type(instance).__module__]
+    vm_module = contract_module.gl.vm
+    malformed = {
+        "kind": "analysis", "outcome": "approved", "analysis": {
+            "artifact_match": "yes", "manifest_match": "yes", "evidence_support": "yes",
+            "risk": "no", "confidence": 94, "rationale": None,
+        },
+    }
+
+    def reject_malformed_leader(leader, validator):
+        assert validator(vm_module.Return(calldata=malformed)) is False
+        return None
+
+    monkeypatch.setattr(vm_module, "run_nondet_unsafe", reject_malformed_leader)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    row = contract.get_seal("PS-001")
+    assert row.status == "retryable"
+    assert row.reason == "consensus_unavailable"
+    assert int(row.deposit) == 10**15
+
+
+def test_inconsistent_analysis_outcome_pair_cannot_equate(
+    direct_vm, direct_deploy, direct_alice
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    instance = object.__getattribute__(contract, "_instance")
+    contract_module = sys.modules[type(instance).__module__]
+    analysis = {
+        "artifact_match": "yes", "manifest_match": "no", "evidence_support": "yes",
+        "risk": "no", "confidence": 94, "rationale": "The manifest does not match.",
+    }
+    left = {"kind": "analysis", "outcome": "approved", "analysis": analysis}
+    right = {"kind": "analysis", "outcome": "approved", "analysis": dict(analysis)}
+    assert contract_module._equivalent(left, right) is False
+
+
+@pytest.mark.parametrize("rationale", [None, True, 17, [], {}, "  \t\n  "])
+def test_equivalence_rejects_malformed_rationale(
+    direct_vm, direct_deploy, direct_alice, rationale
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    instance = object.__getattribute__(contract, "_instance")
+    contract_module = sys.modules[type(instance).__module__]
+    analysis = {
+        "artifact_match": "yes", "manifest_match": "yes", "evidence_support": "yes",
+        "risk": "no", "confidence": 94, "rationale": rationale,
+    }
+    result = {"kind": "analysis", "outcome": "approved", "analysis": analysis}
+    assert contract_module._equivalent(result, result) is False
+
+
 @pytest.mark.parametrize("state", ["funded", "active", "submitted", "retryable"])
 def test_every_expiry_path_refunds_at_exact_boundary_and_rejects_replay(
     direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, state
@@ -763,6 +861,62 @@ def test_challenge_slot_cannot_be_reused_after_invalid_review(direct_vm, direct_
     contract.review_challenge("PS-001")
     with direct_vm.expect_revert():
         contract.challenge("PS-001", "CH-TWICE", challenge_manifest(), "Try again.")
+
+
+def test_only_adversely_affected_role_may_challenge_preliminary_approval(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm)
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    assert contract.get_seal("PS-001").status == "preliminary_approved"
+    for actor in (direct_bob, direct_charlie):
+        direct_vm.sender = actor
+        with direct_vm.expect_revert():
+            contract.challenge("PS-001", "CH-BENEFIT", challenge_manifest(), "Invalid adverse challenge.")
+
+
+def test_invalid_block_challenge_does_not_exhaust_other_adverse_party(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+):
+    contract = deploy(direct_vm, direct_deploy, direct_alice)
+    create(contract, direct_vm, direct_alice, direct_bob, direct_charlie)
+    activate(contract, direct_vm, direct_bob)
+    setup(direct_vm, answer={
+        "artifact_match": "no", "manifest_match": "yes", "evidence_support": "no",
+        "risk": "yes", "confidence": 94, "rationale": "The release is blocked.",
+    })
+    direct_vm.sender = direct_alice
+    contract.review("PS-001")
+    assert contract.get_seal("PS-001").status == "preliminary_blocked"
+
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    direct_vm.sender = direct_bob
+    contract.challenge("PS-001", "CH-BENEFICIARY", challenge_manifest(digest(b"wrong")), "Invalid challenge.")
+    direct_vm.sender = direct_alice
+    with direct_vm.expect_revert():
+        contract.challenge("PS-001", "CH-SPONSOR", challenge_manifest(), "Sponsor cannot challenge a block.")
+    direct_vm.clear_mocks()
+    setup(direct_vm, answer={
+        "artifact_match": "no", "manifest_match": "yes", "evidence_support": "no",
+        "risk": "yes", "confidence": 94, "rationale": "The release remains blocked.",
+    })
+    direct_vm.mock_web(r"challenge\.example\.com/attestation\.txt", {"status": 200, "body": CHALLENGE})
+    direct_vm.sender = direct_bob
+    contract.review_challenge("PS-001")
+    restored = contract.get_seal("PS-001")
+    assert restored.status == "preliminary_blocked"
+    assert restored.challenge_id == ""
+
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert():
+        contract.challenge("PS-001", "CH-BENEFICIARY-RETRY", challenge_manifest(), "Repeated challenge.")
+    direct_vm.sender = direct_charlie
+    contract.challenge("PS-001", "CH-CONSUMER", challenge_manifest(), "The consumer files the adverse challenge.")
+    assert contract.get_seal("PS-001").status == "challenged"
 
 
 def test_approved_guard_can_be_finalized_and_settled_by_consumer(direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie):

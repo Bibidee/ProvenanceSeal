@@ -182,7 +182,10 @@
         "challenge_summary": "string",
         "challenge_next_review_at": "int",
         "challenge_review_deadline": "int",
-        "challenge_grace_used": "int"
+        "challenge_grace_used": "int",
+        "challenge_sponsor_used": "int",
+        "challenge_beneficiary_used": "int",
+        "challenge_consumer_used": "int"
       }
     },
     "refund_blocked": {

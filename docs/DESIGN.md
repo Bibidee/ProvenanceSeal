@@ -20,13 +20,16 @@ integer `confidence` from 0 to 100, and a bounded `rationale`. Approval requires
 all three positive matches, `risk == no`, and confidence at least 75. A material
 negative is `blocked`; uncertainty, low confidence, malformed output, or an
 external execution failure is `retryable` or an integrity block. Rationale is
-never used to authorize payment.
+never used to authorize payment, but it must be an actual nonempty string in the
+exact response schema; null, numeric, boolean, array, object, or blank values
+are malformed and retryable.
 
 Validators must agree on the decision kind, outcome, all material semantic
-fields, and confidence within 20 points. Malformed validator payloads fail
-equivalence rather than being coerced. Validators do not need identical prose;
-this allows harmless explanation variance without changing an authorization
-consequence.
+fields, and confidence within 20 points. The validator also rejects missing or
+extra analysis keys, malformed rationale types, and analysis/outcome pairs whose
+derived outcome is inconsistent. Malformed validator payloads fail equivalence
+rather than being coerced. Validators do not need identical prose; this allows
+harmless explanation variance without changing an authorization consequence.
 
 ## Evidence independence
 
@@ -34,9 +37,10 @@ Each evidence record declares an authority label and a URL. A normal release
 manifest must contain at least two distinct labels and distinct HTTPS host
 origins, so two paths on one host cannot be counted as independent
 corroboration. Labels remain descriptive metadata; they do not prove the
-authority's real-world identity. Challenge manifests are smaller and single-use;
-their evidence IDs are normalized to lowercase and must not overlap the original manifest's IDs or URL origins, and
-the semantic review receives original and challenge evidence in separate fields.
+authority's real-world identity. Challenge manifests are smaller and role-scoped
+with bounded attempts; their evidence IDs are normalized to lowercase and must
+not overlap the original manifest's IDs or URL origins, and the semantic review
+receives original and challenge evidence in separate fields.
 Challenge evidence does not silently become original corroboration.
 
 ## Escrow ordering
@@ -67,13 +71,16 @@ remains in `deposit` and available to the authorized parties.
 ## Challenge state machine
 
 `preliminary_approved` and `preliminary_blocked` retain the original consensus
-outcome. A single authorized challenge may enter `challenged`, but it never
-moves escrow by itself. If the challenge evidence is malformed, unavailable,
-unclear, or times out, the seal returns to its original preliminary state and
-the challenge slot remains consumed. A consensus-backed challenge result can
+outcome. A role-scoped challenge may enter `challenged`, but it never moves
+escrow by itself. Only the sponsor may challenge a preliminary approval. A
+preliminary block gives the beneficiary and consumer one independent
+adverse-review attempt each, so one party cannot exhaust the other's path. If
+challenge evidence is malformed, unavailable, unclear, or times out, the seal
+returns to its original preliminary state, clears the active challenge, and
+consumes only that initiator's attempt. A consensus-backed challenge result can
 produce `approved` (the challenge is upheld) or `blocked` (the release is
 overturned). Only a blocked terminal record can be refunded, and only by the
-sponsor. This bounded one-challenge policy removes the forced-refund grief path
+sponsor. This bounded role-scoped policy removes the forced-refund grief path
 without adding a second custody pool for challenge bonds.
 
 ## Limitations

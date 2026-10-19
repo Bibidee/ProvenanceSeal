@@ -6,7 +6,7 @@ presented as current until the local release gate and CI are green and a fresh
 Studionet deployment is explicitly authorized and finalized.
 
 Current frozen-source candidate: SHA-256
-`4a2e1bce55b1387075e9bd871c9b1feb34a986d0a39d42244c1efaaf55a3a293`.
+`d4645c806bb8b367c3ce47ecb30ee0dac564d7dc571a7b89b8b2c1c946320246`.
 
 ## v0.2.0 pre-deployment acceptance checklist
 
@@ -20,6 +20,7 @@ Current frozen-source candidate: SHA-256
 - [ ] beneficiary fallback is rejected before, and allowed at/after, the exact two-hour boundary
 - [ ] approved escrow remains deposited after consumer-window expiry when nobody settles
 - [ ] no timeout path automatically refunds or pays an approved escrow
+- [ ] role-scoped challenge attempts cannot exhaust an opposing party's adverse-review path
 - [ ] malformed challenge evidence cannot poison the original outcome
 - [ ] challenge evidence IDs are normalized to lowercase, cannot duplicate original evidence IDs/origins, and semantic review labels evidence origins separately
 - [ ] sponsor requirements remain immutable after beneficiary submission

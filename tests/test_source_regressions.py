@@ -25,6 +25,9 @@ def test_contract_preserves_requirements_and_challenge_origin():
     assert '"original_evidence"' in source
     assert '"challenge_evidence"' in source
     assert 'identifier = _identifier(item.get("id"), "evidence id", 48).lower()' in source
+    assert "challenge_sponsor_used" in source
+    assert "challenge_beneficiary_used" in source
+    assert "challenge_consumer_used" in source
 
 
 def test_contract_has_no_unbounded_challenge_reversal():
@@ -33,3 +36,6 @@ def test_contract_has_no_unbounded_challenge_reversal():
     assert "self._restore_challenge(seal, \"challenge_expired\")" in challenge_block
     assert "self._settle(seal, seal.sponsor, REFUNDED_SPONSOR)" in challenge_block
     assert "challenge_review_deadline" in challenge_block
+    assert "challenge_sponsor_used" in source
+    assert "challenge_beneficiary_used" in source
+    assert "challenge_consumer_used" in source

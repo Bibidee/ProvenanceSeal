@@ -33,12 +33,16 @@ and the beneficiary receives the escrow. The consumer has an exclusive two-hour
 settlement window; once it expires, the beneficiary can settle independently.
 That timeout only unlocks the beneficiary fallback: it never refunds the
 sponsor, cancels the release, or pays automatically. A blocked result refunds
-the sponsor. A challenge is single-use and bounded: expiry, malformed evidence,
-or provider uncertainty restores the original preliminary outcome and never
-moves the escrow. Challenge evidence must use IDs normalized to lowercase and URL origins distinct from
-the original evidence, and semantic review receives original and challenge
-evidence in separate labeled fields. Only a consensus-backed adverse challenge
-changes an approval to `blocked`; only the sponsor can claim a blocked refund.
+the sponsor. Challenge opportunities are role-scoped and bounded: a preliminary
+approval can be challenged only by the sponsor, while a preliminary block gives
+the beneficiary and consumer one independent adverse-review opportunity each.
+An invalid, expired, or unavailable attempt clears only the active challenge and
+marks that role as used, so a benefiting participant cannot exhaust the
+opposing party's path and no role can retry indefinitely. Challenge evidence
+must use IDs normalized to lowercase and URL origins distinct from the original
+evidence, and semantic review receives original and challenge evidence in
+separate labeled fields. Only a consensus-backed adverse challenge changes an
+approval to `blocked`; only the sponsor can claim a blocked refund.
 Provider/network errors and malformed model output become `retryable`, never an
 approval. Every payout zeros the stored deposit and persists the terminal state
 before the single transfer helper emits GEN.
@@ -74,10 +78,12 @@ URLs, IP literals, local/internal hostnames, bad hashes, oversized/empty artifac
 duplicate evidence IDs (after lowercase normalization) or origins, insufficient declared-authority corroboration,
 and illegal lifecycle transitions. Evidence origins must be distinct within a
 manifest; declared authority labels remain descriptive and are not identity
-proofs. Validator equivalence compares the final authorization outcome, all
-material semantic fields, and a bounded confidence delta; rationale text is not
-authorization data. Uncertainty, provider failure, unavailable evidence, invalid
-UTF-8, and semantic risk fail closed.
+proofs. The model response must contain exactly the six documented keys,
+tri-state semantic strings, integer confidence, and a nonempty string rationale.
+Validator equivalence compares the final authorization outcome, all material
+semantic fields, and a bounded confidence delta; malformed payloads fail closed
+and rationale text is not authorization data. Uncertainty, provider failure,
+unavailable evidence, invalid UTF-8, and semantic risk fail closed.
 
 URL admission cannot prove DNS resolution or redirect safety, declared
 authorities do not establish identity, and semantic-model judgments can still

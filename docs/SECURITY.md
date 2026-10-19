@@ -12,9 +12,12 @@ unavailable, redirected, or mismatched responses cannot produce approval.
 ## Semantic safety
 
 Artifacts and evidence are untrusted quoted data. Prompt-injection text inside a
-release file is not a reviewer instruction. Approval is derived only from the
+release file is not a reviewer instruction. The prompt requests one exact JSON
+object and the parser requires exact keys, tri-state semantic values, integer
+confidence, and a nonempty string rationale. Approval is derived only from the
 bounded fields returned by the model and requires independent validator
-agreement on every material field and the authorization outcome.
+agreement on every material field and the authorization outcome; malformed
+leader or validator payloads fail closed.
 
 ## Escrow safety
 
@@ -32,17 +35,20 @@ seal cannot be passed to `refund_blocked`.
 
 ## Challenge safety
 
-Only one challenge slot exists per seal. The one-hour challenge filing deadline
-is separate from the bounded adjudication deadline created when the challenge
-is accepted. Entering `challenged` does not move or reverse escrow. Challenge
-evidence IDs are normalized to lowercase and cannot duplicate original evidence
-IDs or URL origins, and the
+Challenge opportunities are role-scoped and bounded per seal. The one-hour
+challenge filing deadline is separate from the bounded adjudication deadline
+created when a challenge is accepted. A preliminary approval is challengeable
+only by the sponsor; a preliminary block is challengeable by the beneficiary
+and consumer, with one independent attempt for each. Entering `challenged`
+does not move or reverse escrow. Challenge evidence IDs are normalized to
+lowercase and cannot duplicate original evidence IDs or URL origins, and the
 semantic review receives original and challenge evidence separately. Invalid,
 unavailable, unclear, or expired challenge evidence restores the original
-preliminary decision, so a frivolous challenge cannot force a sponsor refund or
-deny a valid beneficiary payment. A consensus-backed adverse result may still
-overturn an approval into `blocked`; the sponsor must then explicitly claim the
-refund.
+preliminary decision, clears only the active challenge, and consumes that
+initiator's bounded attempt. This prevents a benefiting participant from
+exhausting the opposing party's challenge path while preventing indefinite
+frivolous retries. A consensus-backed adverse result may still overturn an
+approval into `blocked`; the sponsor must then explicitly claim the refund.
 
 ## Explicit limitations
 
