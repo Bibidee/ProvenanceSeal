@@ -1,6 +1,7 @@
 # ProvenanceSeal
 
-Current contract release: **v0.2.0** (remediation branch; not yet deployed).
+Current contract release: **v0.2.0**, deployed and source-verified on GenLayer
+Studionet (chain ID `61999`).
 
 ProvenanceSeal is a standalone GenLayer Intelligent Contract primitive for
 hash-bound software release provenance with GEN escrow. A sponsor commits to a
@@ -107,10 +108,21 @@ genvm-lint schema contracts/provenanceseal.py --output artifacts/provenanceseal.
 
 Only `contracts/provenanceseal.py` is deployable. Tests and documentation are
 kept outside `contracts/` so GenVM lint cannot mistake pytest imports for
-contract sources. The v0.2.0 source must be frozen, CI must be green, and a
-future Studionet 61999 deployment must be compared byte-for-byte before it is
-described as current. The historical v0.1.1 deployment is documented separately
-in `docs/DEPLOYMENT.md` and is not source-parity evidence for this branch.
+contract sources. The v0.2.0 source is frozen, CI is green, and the current
+Studionet deployment is compared byte-for-byte in `docs/DEPLOYMENT.md`. The
+historical v0.1.1 deployment is documented separately and is not source-parity
+evidence for this release.
+
+## Current Studionet deployment
+
+The finalized v0.2.0 deployment and its exact source hash are recorded in
+`docs/DEPLOYMENT.md`. A bounded live seal was also exercised: the review failed
+closed with `artifact_too_large` because the deployed source is larger than the
+contract's 20,000-byte fetch limit, and the sponsor escrow was refunded after
+the challenge window. No successful beneficiary payout is claimed. A future
+successful lifecycle must use a smaller, independently hashable release
+artifact; the contract source itself is not a suitable live artifact under the
+current limit.
 
 ## Downstream integration
 
