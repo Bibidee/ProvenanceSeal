@@ -73,6 +73,25 @@ does not expose an independently queryable child receipt. This is transfer
 intent evidence only, not proof of credited balance. A successful beneficiary
 payout and independently verified child credit remain unverified.
 
+## Successful live consensus review
+
+Seal `PS-LIVE-V020-005` provides a separate positive live semantic-review
+record on the same deployed v0.2.0 contract. Each transaction finalized with
+`FINALIZED` and `MAJORITY_AGREE`:
+
+- [`create_seal`](https://genlayer-explorer.vercel.app/tx/0xcaf66915f8b28e8d8c857e47ca4344ef79b12aff5d696ebb48ae9823a6ae2555): funded the seal with `1000000000000000` wei (`0.001 GEN`)
+- [`accept_seal`](https://genlayer-explorer.vercel.app/tx/0xe6fd133c3ca487e9b9751cd6a929771de573d2d19f417a86c51d8bb5229295fb): accepted by the designated beneficiary
+- [`submit_release`](https://genlayer-explorer.vercel.app/tx/0x7e9e8b8c7ffd811f56a1ab436b5594664cf9779abd8a82ac32360f96de400521): committed the pinned two-origin evidence manifest
+- [`review`](https://genlayer-explorer.vercel.app/tx/0x474da1ce6d0c99bd1186353417083c2a9e00ae78f8bba1704de94e02b83642c2): finalized semantic consensus review
+
+The canonical post-review state is `preliminary_approved` with confidence
+`90`. The finalized leader result reported `artifact_match = yes`,
+`manifest_match = yes`, `evidence_support = yes`, `risk = no`, and outcome
+`approved`; validators reached majority agreement. The `0.001 GEN` escrow
+remains held in the contract (`deposit = 1000000000000000`). This record does
+not claim terminal `approved`, `paid_beneficiary`, finalized settlement, or
+credited recipient value.
+
 ## Historical v0.1.1 Studionet record
 
 This record is retained for audit history only. It is not source-parity evidence

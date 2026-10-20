@@ -116,13 +116,12 @@ evidence for this release.
 ## Current Studionet deployment
 
 The finalized v0.2.0 deployment and its exact source hash are recorded in
-`docs/DEPLOYMENT.md`. A bounded live seal was also exercised: the review failed
-closed with `artifact_too_large` because the deployed source is larger than the
-contract's 20,000-byte fetch limit, and the sponsor escrow was refunded after
-the challenge window. No successful beneficiary payout is claimed. A future
-successful lifecycle must use a smaller, independently hashable release
-artifact; the contract source itself is not a suitable live artifact under the
-current limit.
+`docs/DEPLOYMENT.md`. A positive live semantic-review case,
+`PS-LIVE-V020-005`, reached `preliminary_approved` with confidence `90` while
+retaining its `0.001 GEN` escrow. The same document also records the earlier
+`PS-LIVE-V020-004` fail-closed `artifact_too_large` case and sponsor refund.
+Neither record is presented as proof of a beneficiary credit until a terminal
+settlement and independently verifiable child transfer are available.
 
 ## Downstream integration
 
