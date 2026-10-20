@@ -69,11 +69,11 @@ failed closed and no beneficiary payout was attempted.
 The refund receipt records a finalized child-transfer message to the sponsor
 `0x7eB2a4B4e913Df62eAe807eF60509B3B7284C7FA` for `1000000000000000` wei, but
 the parent receipt reports `value_credited = false` and this Studionet endpoint
-does not expose an independently queryable child receipt. This is transfer
-intent evidence only, not proof of credited balance. A successful beneficiary
-payout and independently verified child credit remain unverified.
+does not expose an independently queryable child receipt. For this negative
+path, that is transfer-intent evidence only; no beneficiary payout or
+independently verified child credit is claimed.
 
-## Successful live consensus review
+## Successful live consensus review and settlement
 
 Seal `PS-LIVE-V020-005` provides a separate positive live semantic-review
 record on the same deployed v0.2.0 contract. Each transaction finalized with
@@ -84,13 +84,27 @@ record on the same deployed v0.2.0 contract. Each transaction finalized with
 - [`submit_release`](https://genlayer-explorer.vercel.app/tx/0x7e9e8b8c7ffd811f56a1ab436b5594664cf9779abd8a82ac32360f96de400521): committed the pinned two-origin evidence manifest
 - [`review`](https://genlayer-explorer.vercel.app/tx/0x474da1ce6d0c99bd1186353417083c2a9e00ae78f8bba1704de94e02b83642c2): finalized semantic consensus review
 
-The canonical post-review state is `preliminary_approved` with confidence
+The canonical post-review state was `preliminary_approved` with confidence
 `90`. The finalized leader result reported `artifact_match = yes`,
 `manifest_match = yes`, `evidence_support = yes`, `risk = no`, and outcome
 `approved`; validators reached majority agreement. The `0.001 GEN` escrow
-remains held in the contract (`deposit = 1000000000000000`). This record does
-not claim terminal `approved`, `paid_beneficiary`, finalized settlement, or
-credited recipient value.
+remained held in the contract until the authorized consumer settlement below.
+
+The sponsor then finalized the preliminary approval:
+
+- [`finalize_preliminary`](https://genlayer-explorer.vercel.app/tx/0x15652fa9e2e00de280f357a7f7ea012438acbc7bb672057618bdf3808e46e55f): `FINALIZED`, `MAJORITY_AGREE`, GenVM `SUCCESS`
+
+The designated consumer then settled the approved seal:
+
+- [`settle_approved`](https://genlayer-explorer.vercel.app/tx/0x100a958ce3e281f9e94f1097619b18714af995a2bbd045738eb58847b59ec818): `FINALIZED`, `MAJORITY_AGREE`, GenVM `SUCCESS`
+
+The final canonical `get_seal` state is `paid_beneficiary`, with
+`deposit = 0`, `settled_amount = 1000000000000000` wei, and beneficiary
+`0x8355d011e1fc874f3a91245711420d0c92cb3e47`. The settlement receipt records
+a transfer message to that beneficiary for the same amount. The parent receipt
+reports `value_credited = false`, and this Studionet endpoint does not expose an
+independently queryable child receipt; therefore recipient balance credit is
+not claimed beyond the canonical terminal contract state and transfer intent.
 
 ## Historical v0.1.1 Studionet record
 

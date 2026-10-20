@@ -117,11 +117,13 @@ evidence for this release.
 
 The finalized v0.2.0 deployment and its exact source hash are recorded in
 `docs/DEPLOYMENT.md`. A positive live semantic-review case,
-`PS-LIVE-V020-005`, reached `preliminary_approved` with confidence `90` while
-retaining its `0.001 GEN` escrow. The same document also records the earlier
-`PS-LIVE-V020-004` fail-closed `artifact_too_large` case and sponsor refund.
-Neither record is presented as proof of a beneficiary credit until a terminal
-settlement and independently verifiable child transfer are available.
+`PS-LIVE-V020-005`, reached `preliminary_approved` with confidence `90`, was
+finalized, and was settled by the designated consumer to canonical terminal
+state `paid_beneficiary` with zero deposit. The same document also records the
+earlier `PS-LIVE-V020-004` fail-closed `artifact_too_large` case and sponsor
+refund. The settlement transfer intent is recorded, but an independently
+queryable child receipt is unavailable from this Studionet endpoint, so
+independent recipient balance credit is not claimed.
 
 ## Downstream integration
 
