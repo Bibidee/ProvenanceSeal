@@ -1,6 +1,7 @@
 # ProvenanceSeal
 
-Current contract release: **v0.2.0** (remediation branch; not yet deployed).
+Current contract release: **v0.2.0**, deployed and source-verified on GenLayer
+Studionet (chain ID `61999`).
 
 ProvenanceSeal is a standalone GenLayer Intelligent Contract primitive for
 hash-bound software release provenance with GEN escrow. A sponsor commits to a
@@ -107,10 +108,20 @@ genvm-lint schema contracts/provenanceseal.py --output artifacts/provenanceseal.
 
 Only `contracts/provenanceseal.py` is deployable. Tests and documentation are
 kept outside `contracts/` so GenVM lint cannot mistake pytest imports for
-contract sources. The v0.2.0 source must be frozen, CI must be green, and a
-future Studionet 61999 deployment must be compared byte-for-byte before it is
-described as current. The historical v0.1.1 deployment is documented separately
-in `docs/DEPLOYMENT.md` and is not source-parity evidence for this branch.
+contract sources. The v0.2.0 source is frozen, CI is green, and the current
+Studionet deployment is compared byte-for-byte in `docs/DEPLOYMENT.md`. The
+historical v0.1.1 deployment is documented separately and is not source-parity
+evidence for this release.
+
+## Current Studionet deployment
+
+The finalized v0.2.0 deployment and its exact source hash are recorded in
+`docs/DEPLOYMENT.md`. A positive live semantic-review case,
+`PS-LIVE-V020-005`, reached `preliminary_approved` with confidence `90` while
+retaining its `0.001 GEN` escrow. The same document also records the earlier
+`PS-LIVE-V020-004` fail-closed `artifact_too_large` case and sponsor refund.
+Neither record is presented as proof of a beneficiary credit until a terminal
+settlement and independently verifiable child transfer are available.
 
 ## Downstream integration
 

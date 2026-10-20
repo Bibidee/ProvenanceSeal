@@ -1,0 +1,6 @@
+ProvenanceSeal dependency manifest fixture
+package: provenance-seal
+version: 0.2.0
+build: PS-LIVE-V020-005
+dependency: py-genlayer
+source_sha256: d4645c806bb8b367c3ce47ecb30ee0dac564d7dc571a7b89b8b2c1c946320246
